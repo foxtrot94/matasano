@@ -94,6 +94,15 @@ vector<int> FixedXOR(string byteSetA, string byteSetB){
 	return retVal;
 }
 
+string SingleByteXORCypher(string encrypted, char key){
+	string retVal(encrypted.size(),'\0'); //Wouldn't want to miss those null characters, eh?
+	
+	for(int i=0; i<encrypted.size(); ++i){
+		retVal[i] = encrypted[i] ^ key;
+	}
+	return retVal;
+}
+
 void Challenge1(){
 	string test = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
 	//string test = "a2";
@@ -108,12 +117,50 @@ void Challenge2(){
 	cout<<HexVectorToString(result)<<endl;
 }
 
+void Challenge3(){
+	string secret = "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736";
+	string plainChars = HexSequenceToString(secret);
+	cout<<"Interpreted "<<plainChars<<endl;
+	
+	char key = 0;
+	string decodedMessage;
+	int heuristic=0;
+	//We'll brute force the password, it's only 128 possibilities for a single char.
+	for(int i=0; i<128; i++){
+		string decodeAttempt = SingleByteXORCypher(plainChars,(char) i);
+		cout<<i<<". "<<decodeAttempt<<endl;
+		
+		//Our Heuristic will slow us down since we have to count letters.
+		//My initial guess was pretty bad. I was trying to count the letter 'e'. That's the most common one in english words...
+		//However, it turns out that for a full, well structured message, spaces (' ') are an infinitely better heuristic!
+		int hits=0;
+		for(int j=0; j<decodeAttempt.size(); ++j){
+			if(decodeAttempt[j]==' '){ 
+				cout<<"======"<<decodeAttempt<<endl;
+				hits++; 
+			}
+		}
+		if(heuristic < hits){
+			heuristic = hits;
+			decodedMessage = decodeAttempt;
+			key = (char) i;
+		}
+	}
+	
+	cout<<"Message was: "<<decodedMessage<<endl;
+	cout<<"Key was: "<<(int)key<<endl;
+}
+
 int main(){
 	//cout<<"Challenge 1: Hex to Base64"<<endl;
 	//Challenge1();
 	//cout<<endl<<endl;
 	
-	cout<<"Challenge 2: Fixed size XOR"<<endl;
-	Challenge2();
+	//cout<<"Challenge 2: Fixed size XOR"<<endl;
+	//Challenge2();
+	//cout<<endl<<endl;
+	
+	cout<<"Challenge 3: Single Byte XOR"<<endl;
+	Challenge3();
 	cout<<endl<<endl;
 }

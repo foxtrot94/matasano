@@ -136,7 +136,7 @@ string BruteForceSingleByteXOR(string cypher, bool printAttempt){
 	
 	if(printAttempt){
 		cout<<"Message was: "<<decodedMessage<<endl;
-		cout<<"Key was: "<<(int)key<<endl;
+		cout<<"Key was: "<<(int)key<<" '"<<key<<"'"<<endl;
 	}
 	return decodedMessage;
 }
@@ -170,7 +170,7 @@ void Challenge4(){
 	string line, decodeAttempt, likelyDecode;
 	inputFile.open("4.txt");
 	
-	for(int i=0; !inputFile.eof(); ++i){
+	for(int i=1; !inputFile.eof(); ++i){
 		getline(inputFile,line);
 		decodeAttempt = BruteForceSingleByteXOR(HexSequenceToString(line),0);
 		cout<<decodeAttempt<<endl;
@@ -197,6 +197,10 @@ void Challenge4(){
 	
 }
 
+void Test(){
+	BruteForceSingleByteXOR(HexSequenceToString("7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"),1);
+}
+
 int main(){
 	//cout<<"Challenge 1: Hex to Base64"<<endl;
 	//Challenge1();
@@ -210,7 +214,9 @@ int main(){
 	//Challenge3();
 	//cout<<endl<<endl;
 	
-	cout<<"Challenge 4: Single Byte XOR decypher"<<endl;
-	Challenge4();
-	cout<<endl<<endl;
+	//cout<<"Challenge 4: Single Byte XOR decypher"<<endl;
+	//Challenge4();
+	//cout<<endl<<endl;
+	
+	Test();
 }

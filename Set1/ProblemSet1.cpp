@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -103,6 +104,43 @@ string SingleByteXORCypher(string encrypted, char key){
 	return retVal;
 }
 
+string BruteForceSingleByteXOR(string cypher, bool printAttempt){
+	char key = 0;
+	string decodedMessage;
+	int heuristic=0;
+	//We'll brute force the password, it's only 128 possibilities for a single char.
+	for(int i=0; i<128; i++){
+		string decodeAttempt = SingleByteXORCypher(cypher,(char) i);
+	
+		if(printAttempt)
+			cout<<i<<". "<<decodeAttempt<<endl;
+		
+		//Our Heuristic will slow us down since we have to count letters.
+		//My initial guess was pretty bad. I was trying to count the letter 'e'. That's the most common one in english words...
+		//However, it turns out that for a full, well structured message, spaces (' ') are an infinitely better heuristic!
+		int hits=0;
+		for(int j=0; j<decodeAttempt.size(); ++j){
+			if(decodeAttempt[j]>=65 && decodeAttempt[j]<=122){ 
+				hits++; 
+			}
+			if(decodeAttempt[j]==' '){
+				hits++;
+			}
+		}
+		if(heuristic < hits){
+			heuristic = hits;
+			decodedMessage = decodeAttempt;
+			key = (char) i;
+		}
+	}
+	
+	if(printAttempt){
+		cout<<"Message was: "<<decodedMessage<<endl;
+		cout<<"Key was: "<<(int)key<<endl;
+	}
+	return decodedMessage;
+}
+
 void Challenge1(){
 	string test = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
 	//string test = "a2";
@@ -122,33 +160,41 @@ void Challenge3(){
 	string plainChars = HexSequenceToString(secret);
 	cout<<"Interpreted "<<plainChars<<endl;
 	
-	char key = 0;
-	string decodedMessage;
-	int heuristic=0;
-	//We'll brute force the password, it's only 128 possibilities for a single char.
-	for(int i=0; i<128; i++){
-		string decodeAttempt = SingleByteXORCypher(plainChars,(char) i);
-		cout<<i<<". "<<decodeAttempt<<endl;
-		
-		//Our Heuristic will slow us down since we have to count letters.
-		//My initial guess was pretty bad. I was trying to count the letter 'e'. That's the most common one in english words...
-		//However, it turns out that for a full, well structured message, spaces (' ') are an infinitely better heuristic!
+	BruteForceSingleByteXOR(plainChars,true);
+}
+
+void Challenge4(){
+	//Open file and read line-by-line
+	fstream inputFile;
+	int heuristic=0, lineNum=0;
+	string line, decodeAttempt, likelyDecode;
+	inputFile.open("4.txt");
+	
+	for(int i=0; !inputFile.eof(); ++i){
+		getline(inputFile,line);
+		decodeAttempt = BruteForceSingleByteXOR(HexSequenceToString(line),0);
+		cout<<decodeAttempt<<endl;
 		int hits=0;
 		for(int j=0; j<decodeAttempt.size(); ++j){
+			if(decodeAttempt[j]>=65 && decodeAttempt[j]<=122){ 
+				hits++; 
+			}
 			if(decodeAttempt[j]==' '){ 
-				cout<<"======"<<decodeAttempt<<endl;
 				hits++; 
 			}
 		}
 		if(heuristic < hits){
 			heuristic = hits;
-			decodedMessage = decodeAttempt;
-			key = (char) i;
+			likelyDecode = decodeAttempt;
+			lineNum = i;
 		}
 	}
 	
-	cout<<"Message was: "<<decodedMessage<<endl;
-	cout<<"Key was: "<<(int)key<<endl;
+	cout<<"The message was: "<<likelyDecode<<endl;
+	cout<<"At line "<<lineNum<<endl;
+
+	//Read the input file one line at a time.
+	
 }
 
 int main(){
@@ -160,7 +206,11 @@ int main(){
 	//Challenge2();
 	//cout<<endl<<endl;
 	
-	cout<<"Challenge 3: Single Byte XOR"<<endl;
-	Challenge3();
+	//cout<<"Challenge 3: Single Byte XOR"<<endl;
+	//Challenge3();
+	//cout<<endl<<endl;
+	
+	cout<<"Challenge 4: Single Byte XOR decypher"<<endl;
+	Challenge4();
 	cout<<endl<<endl;
 }

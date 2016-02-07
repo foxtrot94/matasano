@@ -141,6 +141,24 @@ string BruteForceSingleByteXOR(string cypher, bool printAttempt){
 	return decodedMessage;
 }
 
+void PrintAsHexChars(string input){
+	for(int i=0; i<input.size(); ++i){
+		cout<<std::hex<<(int)input[i];
+	}
+}
+
+string RepeatingKeyXOR(string plaintext, string key){
+	int keyLength = key.size(), cypherLength = plaintext.size();
+	
+	if(keyLength<1) { return ""; }
+	
+	string cypher(cypherLength,'\0');
+	for(int i=0; i<cypherLength; ++i){
+		cypher[i] = plaintext[i] ^ key[i%keyLength];
+	}
+	return cypher;
+}
+
 void Challenge1(){
 	string test = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
 	//string test = "a2";
@@ -197,6 +215,14 @@ void Challenge4(){
 	
 }
 
+void Challenge5(){
+	string plaintext = "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal";
+	string key = "ICE";
+	cout<<"Encoding: "<<plaintext<<endl;
+	string cypher = RepeatingKeyXOR(plaintext,key);
+	PrintAsHexChars(cypher);
+}
+
 void Test(){
 	BruteForceSingleByteXOR(HexSequenceToString("7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"),1);
 }
@@ -218,5 +244,7 @@ int main(){
 	//Challenge4();
 	//cout<<endl<<endl;
 	
-	Test();
+	cout<<"Challenge 5: Repeating Key XOR"<<endl;
+	Challenge5();
+	cout<<endl<<endl;
 }

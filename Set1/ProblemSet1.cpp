@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#define INT_MAX 4294967295
+
 using namespace std;
 
 //NOTE:
@@ -159,6 +161,22 @@ string RepeatingKeyXOR(string plaintext, string key){
 	return cypher;
 }
 
+int HammingDistance(string inputA, string inputB){
+	if(inputA.size()!=inputB.size()){
+		return INT_MAX;
+	}
+
+	int distance=0;
+	for(int i=0; i<inputA.size(); ++i){
+		int partial = inputA[i] ^ inputB[i];
+		while(partial){
+			distance += partial & 1;
+			partial = partial >>1;
+		}
+	}
+	return distance;
+}
+
 void Challenge1(){
 	string test = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
 	//string test = "a2";
@@ -223,6 +241,10 @@ void Challenge5(){
 	PrintAsHexChars(cypher);
 }
 
+void Challenge6(){
+	cout<<HammingDistance("this is a test","wokka wokka!!!")<<endl;
+}
+
 void Test(){
 	BruteForceSingleByteXOR(HexSequenceToString("7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"),1);
 }
@@ -244,7 +266,11 @@ int main(){
 	//Challenge4();
 	//cout<<endl<<endl;
 	
-	cout<<"Challenge 5: Repeating Key XOR"<<endl;
-	Challenge5();
+//	cout<<"Challenge 5: Repeating Key XOR"<<endl;
+//	Challenge5();
+//	cout<<endl<<endl;
+
+	cout<<"Challenge 6: Break Repeating Key XOR"<<endl;
+	Challenge6();
 	cout<<endl<<endl;
 }

@@ -11,7 +11,8 @@ using namespace std;
 //NOTE:
 // Bear with me here, this is the first set, so I wasn't much for wrapping it nicely.
 // C is more suitable for these problems since C++ is somewhat overkill... BUT the string representation does make it easier to debug
-// So, nothing fancy, just the first problem set.
+// So, nothing fancy, just the first problem set. NO optimizations, no considerations for memory usage nor algorithm runtime.
+// I might try to optimize my code later. I might not. For now, I just want to have it work...
 
 //Converts an arbitrary string of hex chars to a readable string
 //Since C++ strings boil down to char arrays, can be used as an array of bytes
@@ -54,6 +55,50 @@ vector<int> EncodeInBase64(string input){
 		realVector.push_back( (byteTrio) & 0x3F);
 	}
 	return realVector;
+}
+
+string Base64toString(string input){
+	//First, translate the encoded base64 into their respective byte values
+	for(int i=0; i<input.size(); ++i){
+		char rawVal = input[i];
+		if(rawVal >='A' && rawVal <='Z'){
+			rawVal = rawVal - 65;
+		}
+		else if(rawVal >='a' && rawVal <='z'){
+			rawVal += -97 + 26;
+		}
+		else if(rawVal>='0' && rawVal<='9'){
+			rawVal += -48 + 52;
+		}
+		else if(rawVal=='+'){
+			rawVal = 62;
+		}
+		else if(rawVal=='/'){
+			rawVal = 63;
+		}
+		else if(rawVal=='='){
+			rawVal = 0;
+		}
+		input[i]=rawVal;
+	}
+
+	for(int i=0; i<input.size(); ++i){
+		cout<<(int)input[i]<<",";
+	}
+	cout<<endl;
+
+	//Now that we have it at the byte level, make the original string
+	//Keep in mind 4 Base64 chars are 3 ASCII chars
+
+	string plaintext( (input.size())  +1,'\0'); //We can expect the output to be slightly larger with more unused characters...
+	int index=0;
+	for(int i=0; i<input.size() - 3; i+=4){
+		unsigned int bitVal = (input[i] << 18) + (input[i+1] << 12) + (input[i+2] << 6) + (input[i+3]);
+		plaintext[i] = (char) ((bitVal >> 16) & 0xFF);
+		plaintext[i+1] = (char) ((bitVal >> 8) & 0xFF);
+		plaintext[i+3] = (char) (bitVal & 0xFF);
+	}
+	return plaintext;
 }
 
 void PrintAsBase64(vector<int> input){
@@ -177,6 +222,69 @@ int HammingDistance(string inputA, string inputB){
 	return distance;
 }
 
+int GuessKeyLength(string cyphertext, int lowerBound, int upperBound){
+	int retVal = INT_MAX;
+
+	if(lowerBound <= upperBound && lowerBound > 0 && upperBound < cyphertext.size()*2){
+
+		for(int i=lowerBound; i<=upperBound; ++i){
+			string blockOne = cyphertext.substr(0,i);
+			string blockTwo = cyphertext.substr(i,i);
+			if(blockOne.size()!=blockTwo.size()){
+				cout<<"PROBLEM EXPECTED"<<endl;
+			}
+
+			int distance = HammingDistance(blockOne, blockTwo);
+			if(distance/blockOne.size() < retVal){
+				retVal = i;
+			}
+		}
+
+	}
+
+	return retVal;
+}
+
+vector<string> SplitCypherInBlocks(string input, int blockSize){
+	vector<string> blocks;
+
+	if(blockSize > 0  && input.size()>blockSize){
+		int blockAmount = (input.size() / blockSize);
+		input.size() % blockSize > 0 ? blockAmount++ : 0;
+
+		for(int i=0; i<blockAmount; ++i){
+			string thisBlock(input.substr(i*blockSize,blockSize));
+			//Increase the size of the string if needed. This is essentially padding...
+			if(thisBlock.size()<blockSize){
+				thisBlock.resize(blockSize,'\0');
+			}
+			blocks.push_back(thisBlock);
+		}
+	}
+
+	cout<<"printed"<<endl;
+	return blocks;
+}
+
+vector<string> TransposeCypherBlocks(vector<string> inputBlocks){
+	vector<string> transpose;
+
+	int newBlockSize = inputBlocks.size();
+	if(newBlockSize > 0){
+		//a transpose is, unfortunately, an n^2 operation
+		for(int i=0; i<inputBlocks[0].size(); ++i){
+			string transposedBlock(newBlockSize,'\0');
+			for(int j=0; j<newBlockSize; ++j){
+				transposedBlock[j] = inputBlocks[j][i];
+			}
+			transpose.push_back(transposedBlock);
+		}
+	}
+
+	return transpose;
+
+}
+
 void Challenge1(){
 	string test = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
 	//string test = "a2";
@@ -242,7 +350,21 @@ void Challenge5(){
 }
 
 void Challenge6(){
-	cout<<HammingDistance("this is a test","wokka wokka!!!")<<endl;
+	//cout<<HammingDistance("this is a test","wokka wokka!!!")<<endl; //This produces 37
+	cout<<Base64toString("ZWFzdXJlLg==")<<endl;
+
+	cout<<"moving to Split!"<<endl;
+	vector<string> blocks = SplitCypherInBlocks("12345678901",3);
+	for(int i =0; i<blocks.size(); ++i){
+		cout<<blocks[i]<<",";
+	}
+	cout<<endl;
+	blocks = TransposeCypherBlocks(blocks);
+	for(int i =0; i<blocks.size(); ++i){
+		cout<<blocks[i]<<",";
+	}
+
+	//TODO: Put all the function blocks together correctly to solve the challenge
 }
 
 void Test(){

@@ -1,3 +1,4 @@
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -58,6 +59,8 @@ vector<int> EncodeInBase64(string input){
 }
 
 string Base64toString(string input){
+	//TODO: Fix this function! It is not correctly transforming from Base64 to String!
+
 	//First, translate the encoded base64 into their respective byte values
 	for(int i=0; i<input.size(); ++i){
 		char rawVal = input[i];
@@ -76,28 +79,30 @@ string Base64toString(string input){
 		else if(rawVal=='/'){
 			rawVal = 63;
 		}
-		else if(rawVal=='='){
-			rawVal = 0;
-		}
+//		else if(rawVal=='='){
+//			rawVal = 0;
+//		}
+//		if(rawVal==0){
+//			cout<<input[i]<<"="<<rawVal<<"!!!"<<endl;
+//		}
 		input[i]=rawVal;
 	}
-
-	for(int i=0; i<input.size(); ++i){
-		cout<<(int)input[i]<<",";
-	}
-	cout<<endl;
 
 	//Now that we have it at the byte level, make the original string
 	//Keep in mind 4 Base64 chars are 3 ASCII chars
 
-	string plaintext( (input.size())  +1,'\0'); //We can expect the output to be slightly larger with more unused characters...
+	string plaintext( ((input.size())*3)/4,'\0'); //We can expect the output to be slightly larger with more unused characters...
 	int index=0;
 	for(int i=0; i<input.size() - 3; i+=4){
 		unsigned int bitVal = (input[i] << 18) + (input[i+1] << 12) + (input[i+2] << 6) + (input[i+3]);
-		plaintext[i] = (char) ((bitVal >> 16) & 0xFF);
-		plaintext[i+1] = (char) ((bitVal >> 8) & 0xFF);
-		plaintext[i+3] = (char) (bitVal & 0xFF);
+//		cout<<"IN:"<< std::hex<< (int)input[i]<<"|" << (int)input[i+1] <<"|"<< (int)input[i+2] <<"|"<< (int)input[i+3] << ":"<<std::hex<<bitVal<<endl;
+		plaintext[index] = (char) ((bitVal >> 16) & 0xFF);
+		plaintext[index+1] = (char) ((bitVal >> 8) & 0xFF);
+		plaintext[index+2] = (char) (bitVal & 0xFF);
+//		cout<<"OUT:"<<std::hex<<(int)plaintext[i]<<"|"<<(int)plaintext[i+1]<<"|"<<(int)plaintext[i+2]<<"|"<<endl;
+		index+=3;
 	}
+
 	return plaintext;
 }
 
@@ -190,8 +195,27 @@ string BruteForceSingleByteXOR(string cypher, bool printAttempt){
 
 void PrintAsHexChars(string input){
 	for(int i=0; i<input.size(); ++i){
-		cout<<std::hex<<(int)input[i];
+		cout<<std::hex<<setfill('0')<<setw(2)<<(int)input[i];
 	}
+}
+
+string StringToHexChars(string input){
+	string retVal(input.size()*2,'\0');
+	int index=0;
+	PrintAsHexChars(input);
+	cout<<endl;
+
+	for(int i=0; i<input.size(); ++i){
+		stringstream buf;
+		//Let C++'s std do the heavy lifting for us
+		buf<<std::hex<<setfill('0')<<setw(2)<<(int)input[i];
+
+		retVal[index] =  (buf.str()[0]);
+		retVal[index+1]=( buf.str()[1]);
+		index+=2;
+	}
+
+	return retVal;
 }
 
 string RepeatingKeyXOR(string plaintext, string key){
@@ -368,7 +392,27 @@ void Challenge6(){
 }
 
 void Test(){
-	BruteForceSingleByteXOR(HexSequenceToString("7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"),1);
+//	BruteForceSingleByteXOR(HexSequenceToString("7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"),1);
+	fstream base64File;
+	ofstream hexFile("6.hex.txt");
+	base64File.open("6.txt");
+
+	string line;
+	do{
+		//Read each line, transform it to ASCII char and put it back
+		getline(base64File,line);
+		cout<<line<<": ";
+		string asciiLine = StringToHexChars(Base64toString(line));
+		cout<<asciiLine<<endl;
+		hexFile << asciiLine << endl;
+	}while(!base64File.eof());
+	cout<<"FINISHED"<<endl;
+	hexFile.close();
+	base64File.close();
+}
+
+void Test2(){
+	cout<<Base64toString("HUIfTQsPAh9PE048GmllH0kcDk4TAQsHThsBFkU2AB4BSWQgVB0dQzNTTmVS")<<endl;
 }
 
 int main(){
@@ -392,7 +436,9 @@ int main(){
 //	Challenge5();
 //	cout<<endl<<endl;
 
-	cout<<"Challenge 6: Break Repeating Key XOR"<<endl;
-	Challenge6();
-	cout<<endl<<endl;
+//	cout<<"Challenge 6: Break Repeating Key XOR"<<endl;
+//	Challenge6();
+//	cout<<endl<<endl;
+
+	Test();
 }

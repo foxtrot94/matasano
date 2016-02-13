@@ -79,12 +79,7 @@ string Base64toString(string input){
 		else if(rawVal=='/'){
 			rawVal = 63;
 		}
-//		else if(rawVal=='='){
-//			rawVal = 0;
-//		}
-//		if(rawVal==0){
-//			cout<<input[i]<<"="<<rawVal<<"!!!"<<endl;
-//		}
+
 		input[i]=rawVal;
 	}
 
@@ -156,7 +151,7 @@ string SingleByteXORCypher(string encrypted, char key){
 	return retVal;
 }
 
-string BruteForceSingleByteXOR(string cypher, bool printAttempt){
+string BruteForceSingleByteXOR(string cypher, bool printAttempt, string* outKey = NULL){
 	char key = 0;
 	string decodedMessage;
 	int heuristic=0;
@@ -189,6 +184,9 @@ string BruteForceSingleByteXOR(string cypher, bool printAttempt){
 	if(printAttempt){
 		cout<<"Message was: "<<decodedMessage<<endl;
 		cout<<"Key was: "<<(int)key<<" '"<<key<<"'"<<endl;
+	}
+	if(outKey!=NULL){
+		*outKey = key;
 	}
 	return decodedMessage;
 }
@@ -247,20 +245,22 @@ int HammingDistance(string inputA, string inputB){
 }
 
 int GuessKeyLength(string cyphertext, int lowerBound, int upperBound){
-	int retVal = INT_MAX;
-
+	int retVal = -1;
+	float smallestNormalized = INT_MAX;
 	if(lowerBound <= upperBound && lowerBound > 0 && upperBound < cyphertext.size()*2){
 
 		for(int i=lowerBound; i<=upperBound; ++i){
 			string blockOne = cyphertext.substr(0,i);
 			string blockTwo = cyphertext.substr(i,i);
 			if(blockOne.size()!=blockTwo.size()){
-				cout<<"PROBLEM EXPECTED"<<endl;
+//				cout<<"PROBLEM EXPECTED"<<endl;
 			}
 
 			int distance = HammingDistance(blockOne, blockTwo);
-			if(distance/blockOne.size() < retVal){
+//			cout<<i<<" :"<<distance<<"| Weighed a "<<( (float)distance/(float)blockOne.size())<<endl;
+			if( ((float)distance/(float)blockOne.size()) < smallestNormalized && ((float)distance/(float)blockOne.size()) > 0){
 				retVal = i;
+				smallestNormalized = ( (float)distance/(float)blockOne.size());
 			}
 		}
 
@@ -296,17 +296,19 @@ vector<string> TransposeCypherBlocks(vector<string> inputBlocks){
 	int newBlockSize = inputBlocks.size();
 	if(newBlockSize > 0){
 		//a transpose is, unfortunately, an n^2 operation
-		for(int i=0; i<inputBlocks[0].size(); ++i){
-			string transposedBlock(newBlockSize,'\0');
-			for(int j=0; j<newBlockSize; ++j){
-				transposedBlock[j] = inputBlocks[j][i];
+		for(int i=0; i<inputBlocks[0].size()-1; i+=2){ // for every row byte pair
+			string transposedBlock(newBlockSize*2,'\0');
+			int blockIndex=0;
+			for(int j=0; j<newBlockSize; j++){ // and every row in our transpose.
+				//The row is the original column entry byte pair
+				transposedBlock[blockIndex++] = inputBlocks[j][i];
+				transposedBlock[blockIndex++] = inputBlocks[j][i+1];
 			}
 			transpose.push_back(transposedBlock);
 		}
 	}
 
 	return transpose;
-
 }
 
 void Challenge1(){
@@ -375,18 +377,55 @@ void Challenge5(){
 
 void Challenge6(){
 	//cout<<HammingDistance("this is a test","wokka wokka!!!")<<endl; //This produces 37
-	cout<<Base64toString("ZWFzdXJlLg==")<<endl;
 
-	cout<<"moving to Split!"<<endl;
-	vector<string> blocks = SplitCypherInBlocks("12345678901",3);
-	for(int i =0; i<blocks.size(); ++i){
-		cout<<blocks[i]<<",";
+	int keyLength = -1;
+	int lowerGuess = 2, upperGuess = 40;
+	fstream hexFile;
+	hexFile.open("6.hex.txt");
+
+
+	//Load the entire document into memory
+	vector<string> loadedDocument;
+	vector<string> transposedBlocks;
+	string line;
+	do{
+		getline(hexFile,line);
+		loadedDocument.push_back(line);
+
+	}while(!hexFile.eof());
+	cout<<"Added "<<loadedDocument.size()<<" Lines"<<endl;
+
+	//guess the key length with the first line
+	cout<<"Key length guesses"<<endl;
+	for(int i=0; i<loadedDocument.size(); ++i){
+		cout<< GuessKeyLength(loadedDocument[i],lowerGuess,upperGuess)<<",";
 	}
 	cout<<endl;
-	blocks = TransposeCypherBlocks(blocks);
-	for(int i =0; i<blocks.size(); ++i){
-		cout<<blocks[i]<<",";
+	keyLength = GuessKeyLength(loadedDocument[0],lowerGuess,upperGuess);
+
+	transposedBlocks = TransposeCypherBlocks(loadedDocument);
+
+	for(int i=0; i<transposedBlocks.size(); i++){
+		cout<<transposedBlocks[i]<<endl;
 	}
+
+//	keyLength = GuessKeyLength(loadedDocument[0],lowerGuess,upperGuess);
+//	cout<<"Key length is probably "<<keyLength<<endl;
+//	keyLength = GuessKeyLength(loadedDocument[1],lowerGuess,upperGuess);
+//	cout<<"Key length is probably "<<keyLength<<endl;
+//	keyLength = GuessKeyLength(loadedDocument[2],lowerGuess,upperGuess);
+//	cout<<"Key length is probably "<<keyLength<<endl;
+
+//	cout<<"moving to Split!"<<endl;
+//	vector<string> blocks = SplitCypherInBlocks("12345678901",3);
+//	for(int i =0; i<blocks.size(); ++i){
+//		cout<<blocks[i]<<",";
+//	}
+//	cout<<endl;
+//	blocks = TransposeCypherBlocks(blocks);
+//	for(int i =0; i<blocks.size(); ++i){
+//		cout<<blocks[i]<<",";
+//	}
 
 	//TODO: Put all the function blocks together correctly to solve the challenge
 }
@@ -436,9 +475,9 @@ int main(){
 //	Challenge5();
 //	cout<<endl<<endl;
 
-//	cout<<"Challenge 6: Break Repeating Key XOR"<<endl;
-//	Challenge6();
-//	cout<<endl<<endl;
+	cout<<"Challenge 6: Break Repeating Key XOR"<<endl;
+	Challenge6();
+	cout<<endl<<endl;
 
-	Test();
+//	Test();
 }

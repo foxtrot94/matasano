@@ -392,7 +392,7 @@ void Challenge5(){
 
 void Challenge6(){
 	cout<<HammingDistance("this is a test","wokka wokka!!!")<<endl; //This produces 37
-
+	string key;
 	int keyLength=0;
 	fstream hexFile;
 	hexFile.open("6.hex.txt");
@@ -403,7 +403,7 @@ void Challenge6(){
 	string line;
 	do{
 		getline(hexFile,line);
-		cout<<line<<endl;
+//		cout<<line<<endl;
 		if(line.size()>0)
 			loadedBytes.append(HexSequenceToString(line));
 
@@ -414,9 +414,21 @@ void Challenge6(){
 	keyLength = GuessKeyLength(loadedBytes,2,40);
 	cout<<"Key Length to guess is "<<keyLength<<endl;
 
+	//for the key length we guessed, let's make strings based on the corresponding char of each key length
+	int blocks = loadedBytes.size()/keyLength;
+	for(int i=0; i<keyLength; ++i){
+		string cypherBlock;
+		char indexKey='\0';
+		//scan the encrypted text to build the block with char at index i
+		for(int j=0; j<blocks; j++){
+			cypherBlock+=loadedBytes.substr((j*keyLength) + i,1);
+		}
+		BruteForceSingleByteXOR(cypherBlock,false,&indexKey);
+		key+=indexKey;
+	}
+	cout<<"Guessed Key \'"<<key<<"\'"<<endl;
 
-
-	//TODO: Put all the function blocks together correctly to solve the challenge
+	cout<<RepeatingKeyXOR(loadedBytes,key)<<endl;
 }
 
 void Test(){

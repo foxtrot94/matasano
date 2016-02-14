@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <openssl/aes.h>
 
 #define INT_MAX 4294967295
 
@@ -59,7 +60,6 @@ vector<int> EncodeInBase64(string input){
 }
 
 string Base64toString(string input){
-	//TODO: Fix this function! It is not correctly transforming from Base64 to String!
 
 	//First, translate the encoded base64 into their respective byte values
 	for(int i=0; i<input.size(); ++i){
@@ -431,6 +431,40 @@ void Challenge6(){
 	cout<<RepeatingKeyXOR(loadedBytes,key)<<endl;
 }
 
+void Challenge7(){
+	string key="YELLOW SUBMARINE";
+	AES_KEY decrypto;
+	int bitMode = 128;
+	fstream base64File;
+	string loadedBytes, line;
+
+	cout<<"Opening File"<<endl;
+	base64File.open("7.txt");
+
+	do{
+		//Read each line, transform to raw byte format and append to string
+		getline(base64File,line);
+		loadedBytes.append(Base64toString(line));
+	}while(!base64File.eof());
+	cout<<"Loaded Document! Read "<<loadedBytes.size()<<" bytes"<<endl;
+
+	cout<<"Setting up key"<<endl;
+	//AES_set_decrypt_key(const unsigned char* key, int bits (128, 256 or 512), AES_KEY* outKey);
+	AES_set_decrypt_key((const unsigned char*)key.c_str(),bitMode,&decrypto);
+
+	unsigned char* decrypted = new unsigned char[loadedBytes.size()+2];
+	decrypted[loadedBytes.size()]='\0';
+
+	//So, AES decyphers everything in blocks of "bitmode" (bitmode/8 bytes) at a time.
+	//Therefore, we have to do a for loop over the total blocks to decrypt
+	for(int i=0; i*bitMode/8 < loadedBytes.size(); i++){
+		AES_ecb_encrypt((const unsigned char*)&(loadedBytes.c_str()[i*bitMode/8]), &(decrypted[i*bitMode/8]), &decrypto, AES_DECRYPT);
+	}
+
+	cout<<decrypted<<endl;
+	delete decrypted;
+}
+
 void Test(){
 //	BruteForceSingleByteXOR(HexSequenceToString("7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"),1);
 	fstream base64File;
@@ -476,8 +510,12 @@ int main(){
 //	Challenge5();
 //	cout<<endl<<endl;
 
-	cout<<"Challenge 6: Break Repeating Key XOR"<<endl;
-	Challenge6();
+//	cout<<"Challenge 6: Break Repeating Key XOR"<<endl;
+//	Challenge6();
+//	cout<<endl<<endl;
+
+	cout<<"Challenge 7: AES ECB Decyrption"<<endl;
+	Challenge7();
 	cout<<endl<<endl;
 
 //	Test();

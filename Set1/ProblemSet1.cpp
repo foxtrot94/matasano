@@ -22,10 +22,11 @@ string HexSequenceToString(string rawInput){
 	string retVal;
 	for(int i=0; i<rawInput.size()-1; i+=2){
 		stringstream buf;
-		int rawChar;
+		unsigned int rawChar;
 		buf.str(rawInput.substr(i,2));
 		buf >> std::hex >> rawChar;
-		retVal+=(char)rawChar;
+		retVal+=(unsigned char)(rawChar&0xFF);
+//		cout<<std::dec<<rawChar<<",";
 	}
 	return retVal;
 }
@@ -193,14 +194,15 @@ string BruteForceSingleByteXOR(string cypher, bool printAttempt, char* outKey = 
 
 void PrintAsHexChars(string input){
 	for(int i=0; i<input.size(); ++i){
-		cout<<std::hex<<setfill('0')<<setw(2)<<(int)input[i];
+		cout<<std::hex<<setfill('0')<<setw(2)<<(unsigned int)(input[i]&0xFF); //HACK: if char is > 128, it gets a "sign" bit set when casting to int...
 	}
+	cout<<endl;
 }
 
 string StringToHexChars(string input){
 	string retVal(input.size()*2,'\0');
 	int index=0;
-	PrintAsHexChars(input);
+//	PrintAsHexChars(input);
 	cout<<endl;
 
 	for(int i=0; i<input.size(); ++i){
@@ -235,7 +237,7 @@ int HammingDistance(string inputA, string inputB){
 
 	int distance=0;
 	for(int i=0; i<inputA.size(); ++i){
-		int partial = inputA[i] ^ inputB[i];
+		int partial = (inputA[i]&0xFF) ^ (inputB[i]&0xFF);
 		while(partial){
 			distance += partial & 1;
 			partial = partial >>1;
@@ -264,10 +266,14 @@ int GuessKeyLength(string cyphertext, int lowerBound, int upperBound){
 		//for every keylength
 		for(int i=lowerBound; i<=upperBound; ++i){
 			//divide the cyphertext into as many possible blocks
-			float distance = 0;
+			double distance = 0.0f;
 			int repetitions = cyphertext.size()/i;
+
 			for(int j=0; j<repetitions-1; ++j){
-				distance += AverageHammingDistance(cyphertext.substr(j*i,i),cyphertext.substr((j+1)*i,i));
+				string blockA = cyphertext.substr(j*i,i);
+				string blockB = cyphertext.substr((j+1)*i,i);
+				distance += AverageHammingDistance(blockA,blockB);
+//				cout<<distance;
 			}
 
 			distance = distance/repetitions;
@@ -465,6 +471,11 @@ void Challenge7(){
 	delete decrypted;
 }
 
+void Challenge8(){
+
+
+}
+
 void Test(){
 //	BruteForceSingleByteXOR(HexSequenceToString("7b5a4215415d544115415d5015455447414c155c46155f4058455c5b523f"),1);
 	fstream base64File;
@@ -487,6 +498,29 @@ void Test(){
 
 void Test2(){
 	cout<<Base64toString("HUIfTQsPAh9PE048GmllH0kcDk4TAQsHThsBFkU2AB4BSWQgVB0dQzNTTmVS")<<endl;
+}
+
+void Test3(){
+	fstream hexFile;
+	hexFile.open("8.txt");
+	string line;
+	int lineNum=1,ecbLine=-1;
+	cout<<"Opening file"<<endl;
+	while(!hexFile.eof()){
+		getline(hexFile,line);
+//		cout<<line<<endl;
+		line = HexSequenceToString(line);
+//		PrintAsHexChars(line);
+//		cout<<endl<<endl;
+		int keyLengthGuess = GuessKeyLength(line,12,32);
+		cout<<std::dec<<keyLengthGuess<<",";
+		lineNum++;
+		if(keyLengthGuess==16){
+			ecbLine=lineNum;
+		}
+	}
+	cout<<endl;
+	cout<<"ECB At line "<<ecbLine<<endl;
 }
 
 int main(){
@@ -514,9 +548,9 @@ int main(){
 //	Challenge6();
 //	cout<<endl<<endl;
 
-	cout<<"Challenge 7: AES ECB Decyrption"<<endl;
-	Challenge7();
-	cout<<endl<<endl;
+//	cout<<"Challenge 7: AES ECB Decyrption"<<endl;
+//	Challenge7();
+//	cout<<endl<<endl;
 
-//	Test();
+	Test3();
 }

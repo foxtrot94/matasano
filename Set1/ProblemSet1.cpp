@@ -332,6 +332,28 @@ vector<string> TransposeCypherBlocks(vector<string> inputBlocks){
 	return transpose;
 }
 
+bool HexEncodingIsECBCypher(string input){
+	//Go through an n^2 operation to see if any of the blocks resemble each other
+	int blockSize = 16;
+	int segments = input.size() / blockSize;
+	for(int i=0; i < segments; i++){
+		string currentElement = input.substr(i*blockSize,blockSize);
+
+		for(int j=i+1; j< segments; j++){
+			if(j==i){ continue; }
+			if(currentElement == input.substr(j*blockSize,blockSize)){
+				cout<<"FOUND!"<<endl;
+				PrintAsHexChars(currentElement);
+				cout<<"="<<endl;
+				PrintAsHexChars(input.substr(j*blockSize,blockSize));
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 void Challenge1(){
 	string test = "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d";
 	//string test = "a2";
@@ -472,7 +494,22 @@ void Challenge7(){
 }
 
 void Challenge8(){
+	fstream hexFile;
+	hexFile.open("8.txt");
+	string line;
+	int lineNum = 0;
+	while(!hexFile.eof()){
+		lineNum+=1;
+		getline(hexFile,line);
+		line = HexSequenceToString(line);
+		cout<<lineNum<<",";
+		if(HexEncodingIsECBCypher(line)){
+			cout<<"Found first ECB line at "<<std::dec<<lineNum<<endl;
+			break;
+		}
 
+	}
+	hexFile.close();
 
 }
 
@@ -548,9 +585,11 @@ int main(){
 //	Challenge6();
 //	cout<<endl<<endl;
 
-//	cout<<"Challenge 7: AES ECB Decyrption"<<endl;
+//	cout<<"Challenge 7: AES ECB Decryption"<<endl;
 //	Challenge7();
 //	cout<<endl<<endl;
 
-	Test3();
+	cout<<"Challenge 8: "<<endl;
+	Challenge8();
+	cout<<endl<<endl;
 }
